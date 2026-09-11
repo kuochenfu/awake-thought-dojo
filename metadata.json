@@ -1,0 +1,6 @@
+{
+  "name": "AWAKE 思考修煉場",
+  "description": "基於批判性思維、蘇格拉底提問法、H15論證拆解與奧坎剃刀原則的遊戲化學習與架構評審系統",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

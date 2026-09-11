@@ -1,0 +1,150 @@
+@import "tailwindcss";
+
+/* -------------------------------------------------------------
+ * AWAKE 流光溢彩視覺獎勵系統 (Iridescent & Aurora Animation Suite)
+ * 專為「清醒真理大宗師」等心智成就量身定制
+ * ------------------------------------------------------------*/
+
+@keyframes iridescent-spin {
+  0% {
+    filter: hue-rotate(0deg) brightness(1);
+    transform: rotate(0deg);
+  }
+  50% {
+    filter: hue-rotate(180deg) brightness(1.3);
+  }
+  100% {
+    filter: hue-rotate(360deg) brightness(1);
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes holographic-shift {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+@keyframes grandmaster-aura {
+  0%, 100% {
+    box-shadow: 0 0 20px rgba(234, 179, 8, 0.4), 0 0 45px rgba(236, 72, 153, 0.3), inset 0 0 15px rgba(168, 85, 247, 0.3);
+    border-color: rgba(250, 204, 21, 0.9);
+  }
+  50% {
+    box-shadow: 0 0 35px rgba(168, 85, 247, 0.6), 0 0 65px rgba(59, 130, 246, 0.5), inset 0 0 25px rgba(234, 179, 8, 0.5);
+    border-color: rgba(192, 132, 252, 1);
+  }
+}
+
+@keyframes sparkle-twinkle {
+  0%, 100% {
+    opacity: 0.2;
+    transform: scale(0.8) rotate(0deg);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.3) rotate(45deg);
+  }
+}
+
+@keyframes cosmic-ray {
+  0% {
+    transform: rotate(0deg) scale(1);
+    opacity: 0.6;
+  }
+  50% {
+    transform: rotate(180deg) scale(1.15);
+    opacity: 0.9;
+  }
+  100% {
+    transform: rotate(360deg) scale(1);
+    opacity: 0.6;
+  }
+}
+
+/* 宗師文字全息流光 */
+.grandmaster-text-shimmer {
+  background: linear-gradient(
+    135deg,
+    #fef08a 0%,
+    #f59e0b 20%,
+    #ec4899 40%,
+    #a855f7 60%,
+    #3b82f6 80%,
+    #fef08a 100%
+  );
+  background-size: 300% 300%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: holographic-shift 4s ease infinite;
+}
+
+/* 宗師流光外框膠囊 */
+.grandmaster-badge-glow {
+  position: relative;
+  background: linear-gradient(135deg, rgba(30, 27, 75, 0.9), rgba(15, 23, 42, 0.95));
+  border: 1px solid rgba(250, 204, 21, 0.7);
+  animation: grandmaster-aura 3s ease-in-out infinite;
+}
+
+.grandmaster-badge-glow::before {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: inherit;
+  background: linear-gradient(
+    90deg,
+    #f59e0b,
+    #ec4899,
+    #8b5cf6,
+    #06b6d4,
+    #f59e0b
+  );
+  background-size: 300% 300%;
+  animation: holographic-shift 4s linear infinite;
+  z-index: -1;
+  opacity: 0.8;
+  filter: blur(4px);
+}
+
+/* 哲人宗師 (Lv.4) 靈性紫金光 */
+.master-level4-glow {
+  box-shadow: 0 0 20px rgba(168, 85, 247, 0.4), inset 0 0 10px rgba(217, 70, 239, 0.2);
+  border-color: rgba(192, 132, 252, 0.8);
+}
+
+/* 剃刀論證大師 (Lv.3) 奧坎冷冽青藍光 */
+.master-level3-glow {
+  box-shadow: 0 0 15px rgba(14, 165, 233, 0.35), inset 0 0 8px rgba(6, 182, 212, 0.2);
+  border-color: rgba(56, 189, 248, 0.8);
+}
+
+/* 宇宙光芒背景層 */
+.cosmic-rays-bg {
+  position: absolute;
+  width: 200%;
+  height: 200%;
+  background: conic-gradient(
+    from 0deg at 50% 50%,
+    rgba(250, 204, 21, 0.15) 0deg,
+    transparent 30deg,
+    rgba(236, 72, 153, 0.15) 60deg,
+    transparent 90deg,
+    rgba(168, 85, 247, 0.15) 120deg,
+    transparent 150deg,
+    rgba(59, 130, 246, 0.15) 180deg,
+    transparent 210deg,
+    rgba(16, 185, 129, 0.15) 240deg,
+    transparent 270deg,
+    rgba(250, 204, 21, 0.15) 300deg,
+    transparent 330deg,
+    rgba(250, 204, 21, 0.15) 360deg
+  );
+  animation: cosmic-ray 25s linear infinite;
+}
