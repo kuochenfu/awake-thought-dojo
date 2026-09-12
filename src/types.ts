@@ -196,6 +196,24 @@ export interface SocraticDebateTopic {
   }[];
 }
 
+// 國家發展委員會 六大核心戰略產業分類
+export type StrategicIndustry =
+  | 'digital_info'      // 資訊及數位產業
+  | 'cyber_security'   // 資安卓越產業
+  | 'precision_health' // 臺灣精準健康產業
+  | 'green_energy'     // 綠電及再生能源產業
+  | 'national_defense' // 國防及戰略產業
+  | 'strategic_reserve';// 民生及戰備產業
+
+export interface StrategicIndustryMeta {
+  key: StrategicIndustry;
+  label: string;
+  shortLabel: string;
+  iconName: string;
+  description: string;
+  colorClass: string;
+}
+
 // 60秒閃電快問快答
 export interface BlitzQuestion {
   id: string;
@@ -203,6 +221,8 @@ export interface BlitzQuestion {
   sourceType: 'fact' | 'assumption';
   hint: string;
   biasType?: string;
+  industry?: StrategicIndustry;
+  industryName?: string;
 }
 
 // 離線進度備份包

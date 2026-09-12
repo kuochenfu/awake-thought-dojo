@@ -1,6 +1,7 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { BlitzQuestion } from '../types';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { BlitzQuestion, StrategicIndustry } from '../types';
 import { BLITZ_QUESTIONS_POOL } from '../data/featureData';
+import { STRATEGIC_INDUSTRIES } from '../data/strategicIndustryData';
 import {
   Zap,
   Flame,
@@ -9,7 +10,16 @@ import {
   CheckCircle2,
   XCircle,
   Clock,
-  Play
+  Play,
+  Filter,
+  ShieldCheck,
+  Cpu,
+  HeartPulse,
+  Leaf,
+  Crosshair,
+  Boxes,
+  Globe2,
+  Sparkles
 } from 'lucide-react';
 
 interface SpeedDebunkBlitzProps {
@@ -21,6 +31,7 @@ export const SpeedDebunkBlitz: React.FC<SpeedDebunkBlitzProps> = ({
   highScore,
   onFinishBlitz
 }) => {
+  const [selectedIndustry, setSelectedIndustry] = useState<StrategicIndustry | 'all'>('all');
   const [isPlaying, setIsPlaying] = useState(false);
   const [timeLeft, setTimeLeft] = useState(60);
   const [currentIdx, setCurrentIdx] = useState(0);
@@ -32,10 +43,23 @@ export const SpeedDebunkBlitz: React.FC<SpeedDebunkBlitzProps> = ({
 
   const timerRef = useRef<any>(null);
 
-  const questions = BLITZ_QUESTIONS_POOL;
+  // 依據篩選條件過濾題庫，並在開始時隨機洗牌
+  const [shuffledQuestions, setShuffledQuestions] = useState<BlitzQuestion[]>([]);
+
+  const filteredPool = useMemo(() => {
+    if (selectedIndustry === 'all') {
+      return BLITZ_QUESTIONS_POOL;
+    }
+    return BLITZ_QUESTIONS_POOL.filter((q) => q.industry === selectedIndustry);
+  }, [selectedIndustry]);
+
+  const questions = shuffledQuestions.length > 0 ? shuffledQuestions : filteredPool;
   const currentQ = questions[currentIdx % questions.length];
 
   const startGame = () => {
+    // 隨機洗牌目前選定類別的題目
+    const shuffled = [...filteredPool].sort(() => Math.random() - 0.5);
+    setShuffledQuestions(shuffled);
     setIsPlaying(true);
     setIsGameOver(false);
     setTimeLeft(60);
@@ -63,7 +87,7 @@ export const SpeedDebunkBlitz: React.FC<SpeedDebunkBlitzProps> = ({
   }, [isPlaying, timeLeft, score, onFinishBlitz]);
 
   const handleAnswer = (chosenType: 'fact' | 'assumption') => {
-    if (!isPlaying) return;
+    if (!isPlaying || !currentQ) return;
 
     const isCorrect = chosenType === currentQ.sourceType;
 
@@ -82,6 +106,26 @@ export const SpeedDebunkBlitz: React.FC<SpeedDebunkBlitzProps> = ({
     setCurrentIdx((i) => i + 1);
   };
 
+  // 圖標對應
+  const renderIndustryIcon = (iconName: string, className = 'w-3.5 h-3.5') => {
+    switch (iconName) {
+      case 'Cpu':
+        return <Cpu className={className} />;
+      case 'ShieldCheck':
+        return <ShieldCheck className={className} />;
+      case 'HeartPulse':
+        return <HeartPulse className={className} />;
+      case 'Leaf':
+        return <Leaf className={className} />;
+      case 'Crosshair':
+        return <Crosshair className={className} />;
+      case 'Boxes':
+        return <Boxes className={className} />;
+      default:
+        return <Globe2 className={className} />;
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Header Banner */}
@@ -93,19 +137,20 @@ export const SpeedDebunkBlitz: React.FC<SpeedDebunkBlitzProps> = ({
               <Zap className="w-8 h-8" />
             </div>
             <div className="space-y-1">
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <span className="text-xs font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">
                   Speed Debunk Blitz
                 </span>
-                <span className="text-xs text-slate-400">
-                  60 秒高壓反射 • 事實 vs 腦補極限辨析
+                <span className="text-xs px-2.5 py-0.5 rounded-full bg-blue-500/20 text-blue-300 border border-blue-500/30 flex items-center gap-1 font-semibold">
+                  <Sparkles className="w-3 h-3 text-cyan-400" />
+                  國發會六大核心戰略產業題庫共 72 題已就緒
                 </span>
               </div>
               <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight">
                 閃電思維快問快答 (Debunk Blitz)
               </h1>
               <p className="text-xs sm:text-sm text-slate-300 max-w-2xl leading-relaxed">
-                職場會議與決策沒有時間讓你慢思！在極限倒數下快速辨別「客觀事實」與「主觀腦補」，打出連擊肌肉記憶！
+                職場會議與國家戰略決策沒有時間讓你慢思！在 60 秒極限倒數下快速辨析「客觀事實」與「主觀腦補」，打出思維直覺的肌肉記憶！
               </p>
             </div>
           </div>
@@ -121,14 +166,81 @@ export const SpeedDebunkBlitz: React.FC<SpeedDebunkBlitzProps> = ({
         </div>
       </div>
 
+      {/* 產業分類篩選器 (Filter Tabs) */}
+      {!isPlaying && (
+        <div className="bg-slate-900/90 border border-slate-800/90 rounded-2xl p-4 shadow-xl space-y-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2 text-xs font-bold text-slate-300">
+              <Filter className="w-4 h-4 text-amber-400" />
+              <span>產業領域練習篩選：</span>
+              <span className="text-amber-400">
+                （當前題庫池：{filteredPool.length} 題）
+              </span>
+            </div>
+            <span className="text-[11px] text-slate-400 hidden sm:inline">
+              點選指定六大戰略產業或全部綜合對決
+            </span>
+          </div>
+
+          <div className="flex flex-wrap gap-2">
+            <button
+              onClick={() => setSelectedIndustry('all')}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all ${
+                selectedIndustry === 'all'
+                  ? 'bg-amber-500 text-slate-950 shadow-lg shadow-amber-500/20 scale-[1.02]'
+                  : 'bg-slate-800/90 text-slate-300 hover:bg-slate-700 hover:text-white border border-slate-700/60'
+              }`}
+            >
+              <Globe2 className="w-3.5 h-3.5" />
+              <span>全部綜合 (72題)</span>
+            </button>
+
+            {STRATEGIC_INDUSTRIES.map((ind) => {
+              const isSelected = selectedIndustry === ind.key;
+              return (
+                <button
+                  key={ind.key}
+                  onClick={() => setSelectedIndustry(ind.key)}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all ${
+                    isSelected
+                      ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 shadow-lg shadow-amber-500/20 scale-[1.02]'
+                      : 'bg-slate-800/90 text-slate-300 hover:bg-slate-700 hover:text-white border border-slate-700/60'
+                  }`}
+                  title={ind.description}
+                >
+                  {renderIndustryIcon(ind.iconName)}
+                  <span>{ind.shortLabel} (10題)</span>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* 產業簡述提示 */}
+          {selectedIndustry !== 'all' && (
+            <div className="p-2.5 rounded-xl bg-slate-800/50 border border-slate-700/50 text-[11px] text-slate-300 flex items-start gap-2">
+              <span className="font-bold text-amber-400 shrink-0">戰略重點：</span>
+              <span>
+                {STRATEGIC_INDUSTRIES.find((i) => i.key === selectedIndustry)?.description}
+              </span>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Main Blitz Arena */}
       <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-2xl space-y-6 text-center">
         {!isPlaying && !isGameOver && (
-          <div className="py-12 space-y-4 max-w-md mx-auto">
+          <div className="py-10 space-y-4 max-w-md mx-auto">
             <div className="w-16 h-16 rounded-2xl bg-amber-500/20 border border-amber-500/40 text-amber-400 flex items-center justify-center mx-auto">
               <Zap className="w-8 h-8 animate-pulse" />
             </div>
-            <h3 className="text-lg font-bold text-white">準備好挑戰大腦反應極限了嗎？</h3>
+            <h3 className="text-lg font-bold text-white">
+              {selectedIndustry === 'all'
+                ? '全領域極限挑戰：準備好辨析 72 題庫了嗎？'
+                : `專項特訓：${
+                    STRATEGIC_INDUSTRIES.find((i) => i.key === selectedIndustry)?.label
+                  }`}
+            </h3>
             <p className="text-xs text-slate-400 leading-relaxed">
               您將有 60 秒時間辨別隨機飛入的言論。連對將啟動 Combo 翻倍加乘！
             </p>
@@ -142,14 +254,23 @@ export const SpeedDebunkBlitz: React.FC<SpeedDebunkBlitzProps> = ({
           </div>
         )}
 
-        {isPlaying && (
+        {isPlaying && currentQ && (
           <div className="space-y-6">
             {/* Status Bar */}
-            <div className="flex items-center justify-between p-4 rounded-xl bg-slate-800/80 border border-slate-700">
+            <div className="flex flex-wrap items-center justify-between p-4 rounded-xl bg-slate-800/80 border border-slate-700 gap-2">
               <div className="flex items-center gap-2 text-sm font-bold text-amber-400 font-mono">
                 <Clock className="w-4 h-4" />
                 <span>倒數計時：{timeLeft} 秒</span>
               </div>
+
+              {/* 題目所屬產業標籤 */}
+              {currentQ.industryName && (
+                <div className="px-3 py-1 rounded-full bg-cyan-950/80 border border-cyan-500/50 text-cyan-300 text-xs font-bold flex items-center gap-1.5 shadow-sm">
+                  <ShieldCheck className="w-3.5 h-3.5 text-cyan-400" />
+                  <span>{currentQ.industryName}</span>
+                </div>
+              )}
+
               <div className="flex items-center gap-2">
                 {combo > 1 && (
                   <span className="flex items-center gap-1 text-xs font-black px-2.5 py-0.5 rounded-full bg-orange-500/20 text-orange-400 border border-orange-500/30 animate-pulse">
@@ -172,7 +293,10 @@ export const SpeedDebunkBlitz: React.FC<SpeedDebunkBlitzProps> = ({
             </div>
 
             {/* Statement Card */}
-            <div className="p-8 rounded-2xl bg-slate-950 border border-slate-800 min-h-[160px] flex items-center justify-center">
+            <div className="p-8 rounded-2xl bg-slate-950 border border-slate-800 min-h-[170px] flex flex-col items-center justify-center relative">
+              <span className="text-[10px] text-slate-500 font-bold tracking-wider uppercase mb-2">
+                第 {(currentIdx % questions.length) + 1} / {questions.length} 題
+              </span>
               <h3 className="text-base sm:text-xl font-bold text-white leading-relaxed max-w-2xl">
                 「{currentQ.statement}」
               </h3>
@@ -181,7 +305,7 @@ export const SpeedDebunkBlitz: React.FC<SpeedDebunkBlitzProps> = ({
             {/* Feedback Pop */}
             {feedback && (
               <div
-                className={`text-xs font-semibold p-2.5 rounded-lg border ${
+                className={`text-xs font-semibold p-2.5 rounded-lg border transition-all ${
                   feedback.isCorrect
                     ? 'bg-emerald-950/40 border-emerald-500 text-emerald-300'
                     : 'bg-rose-950/40 border-rose-500 text-rose-300'
@@ -199,7 +323,7 @@ export const SpeedDebunkBlitz: React.FC<SpeedDebunkBlitzProps> = ({
               >
                 <CheckCircle2 className="w-6 h-6" />
                 <span>這是【客觀事實】</span>
-                <span className="text-[10px] opacity-75 font-normal">可實證度量與驗收</span>
+                <span className="text-[10px] opacity-75 font-normal">可實證度量、數據規範與驗收</span>
               </button>
 
               <button
@@ -208,7 +332,7 @@ export const SpeedDebunkBlitz: React.FC<SpeedDebunkBlitzProps> = ({
               >
                 <XCircle className="w-6 h-6" />
                 <span>這是【主觀腦補】</span>
-                <span className="text-[10px] opacity-75 font-normal">隱含假設與情感推論</span>
+                <span className="text-[10px] opacity-75 font-normal">隱含盲點、滑坡推想與情感假設</span>
               </button>
             </div>
           </div>
@@ -223,6 +347,14 @@ export const SpeedDebunkBlitz: React.FC<SpeedDebunkBlitzProps> = ({
               <div className="text-3xl font-black text-amber-400 font-mono">{score} 分</div>
               <div className="text-xs text-slate-300">
                 最高連續答對：<span className="text-orange-400 font-bold">{maxCombo} 次</span>
+              </div>
+              <div className="text-[11px] text-slate-400 pt-1">
+                領域類別：
+                <span className="text-amber-300 font-bold">
+                  {selectedIndustry === 'all'
+                    ? '全部綜合 (72題)'
+                    : STRATEGIC_INDUSTRIES.find((i) => i.key === selectedIndustry)?.label}
+                </span>
               </div>
             </div>
             <button

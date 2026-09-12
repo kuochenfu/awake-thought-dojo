@@ -13,6 +13,7 @@ import {
   calculateRadarScores
 } from '../utils/engine';
 import { BLITZ_QUESTIONS_POOL } from '../data/featureData';
+import { STRATEGIC_INDUSTRIES, STRATEGIC_INDUSTRY_QUESTIONS } from '../data/strategicIndustryData';
 
 describe('AWAKE 全方位批判邏輯與邊界安全單元測試 (Comprehensive Test Suite)', () => {
   describe('1. 等級與頭銜升階曲線邊界測試 (Level Boundary Tests)', () => {
@@ -207,6 +208,49 @@ describe('AWAKE 全方位批判邏輯與邊界安全單元測試 (Comprehensive 
         rewardXP: 10
       };
       expect(AchievementSchema.safeParse(invalidAchievement).success).toBe(false);
+    });
+  });
+
+  describe('7. 國發會六大核心戰略產業題庫完整性與分佈測試 (Strategic Industries Pool Guard)', () => {
+    it('六大核心戰略產業定義完整，包含 6 個標準產業領域', () => {
+      expect(STRATEGIC_INDUSTRIES.length).toBe(6);
+      const keys = STRATEGIC_INDUSTRIES.map((i) => i.key);
+      expect(keys).toEqual([
+        'digital_info',
+        'cyber_security',
+        'precision_health',
+        'green_energy',
+        'national_defense',
+        'strategic_reserve'
+      ]);
+    });
+
+    it('戰略產業專題擴充總數恰好為 60 題，且總題庫增至 72 題', () => {
+      expect(STRATEGIC_INDUSTRY_QUESTIONS.length).toBe(60);
+      expect(BLITZ_QUESTIONS_POOL.length).toBe(72);
+    });
+
+    it('六大戰略產業每個產業均恰好分配 10 題 (5 客觀事實 + 5 隱含假設)', () => {
+      for (const industry of STRATEGIC_INDUSTRIES) {
+        const industryQuestions = STRATEGIC_INDUSTRY_QUESTIONS.filter(
+          (q) => q.industry === industry.key
+        );
+        expect(industryQuestions.length).toBe(10);
+
+        const facts = industryQuestions.filter((q) => q.sourceType === 'fact');
+        const assumptions = industryQuestions.filter((q) => q.sourceType === 'assumption');
+        expect(facts.length).toBe(5);
+        expect(assumptions.length).toBe(5);
+      }
+    });
+
+    it('所有戰略題目皆具備非空白陳述句、有效提示與產業中文標籤', () => {
+      for (const q of STRATEGIC_INDUSTRY_QUESTIONS) {
+        expect(q.statement.trim().length).toBeGreaterThan(10);
+        expect(q.hint.trim().length).toBeGreaterThan(5);
+        expect(q.industryName).toBeDefined();
+        expect(['fact', 'assumption']).toContain(q.sourceType);
+      }
     });
   });
 });

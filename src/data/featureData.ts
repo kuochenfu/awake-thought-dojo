@@ -5,6 +5,7 @@ import {
   BlitzQuestion,
   SocraticDebateTopic
 } from '../types';
+import { STRATEGIC_INDUSTRY_QUESTIONS } from './strategicIndustryData';
 
 export const INITIAL_ACHIEVEMENTS: Achievement[] = [
   {
@@ -231,7 +232,9 @@ export const BLITZ_QUESTIONS_POOL: BlitzQuestion[] = [
     statement: '客戶遲遲不簽合約，一定是在等競爭對手給更低的報價。',
     sourceType: 'assumption',
     hint: '隱含假設！客戶可能只是內部法務審核流程延誤。'
-  }
+  },
+  // 國家發展委員會 六大核心戰略產業 60 題批判辨析題庫
+  ...STRATEGIC_INDUSTRY_QUESTIONS
 ];
 
 // 互動式思維路徑圖案例
