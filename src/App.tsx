@@ -21,6 +21,8 @@ import { DiagnosticReport } from './components/DiagnosticReport';
 import { MindfulCoolDown } from './components/MindfulCoolDown';
 import { BackupModal } from './components/BackupModal';
 import { LevelUpModal } from './components/LevelUpModal';
+import { QuestionPoolStatusBar } from './components/QuestionPoolStatusBar';
+import { useQuestionEngine } from './hooks/useQuestionEngine';
 import { calculateLevelAndTitle } from './utils/engine';
 import { Award } from 'lucide-react';
 
@@ -51,6 +53,9 @@ export default function App() {
   const [isBackupModalOpen, setIsBackupModalOpen] = useState(false);
   const [isCoolDownOpen, setIsCoolDownOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  // 全域統一題庫隨機排程引擎（題庫有多少就用多少、零重複隨機分佈）
+  const questionEngine = useQuestionEngine();
 
   // 流光溢彩升階儀式彈窗狀態
   const [levelUpModalData, setLevelUpModalData] = useState<{
@@ -288,22 +293,40 @@ export default function App() {
       />
 
       {/* Main Content Area */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+        {/* 全域題庫統一分佈與不重複狀態欄 */}
+        {['playground', 'arena', 'blitz', 'daily'].includes(activeTab) && (
+          <QuestionPoolStatusBar
+            bankStats={questionEngine.bankStats}
+            onResetHistory={questionEngine.resetQuestionHistory}
+          />
+        )}
+
         {activeTab === 'playground' && (
           <GamifiedPlayground
             userStats={userStats}
             onUpdateStats={handleUpdateStats}
+            questionEngine={questionEngine}
           />
         )}
 
         {activeTab === 'arena' && (
-          <SocraticArena onCompleteDebate={handleCompleteDebate} />
+          <SocraticArena
+            onCompleteDebate={handleCompleteDebate}
+            currentArena={questionEngine.currentArena}
+            arenaCursor={questionEngine.arenaCursor}
+            arenaTotal={questionEngine.arenaTotal}
+            onNextArenaTopic={questionEngine.nextArenaTopic}
+            onMarkSeen={(id) => questionEngine.markAsSeen('arena', id)}
+          />
         )}
 
         {activeTab === 'blitz' && (
           <SpeedDebunkBlitz
             highScore={userStats.blitzHighScore || 0}
             onFinishBlitz={handleFinishBlitz}
+            getShuffledBlitzPool={questionEngine.getShuffledBlitzPool}
+            onQuestionAnswered={(id) => questionEngine.markAsSeen('blitz', id)}
           />
         )}
 
@@ -319,6 +342,11 @@ export default function App() {
           <DailyChallengeView
             userStats={userStats}
             onCompleteDaily={handleCompleteDaily}
+            currentDaily={questionEngine.currentDaily}
+            dailyCursor={questionEngine.dailyCursor}
+            dailyTotal={questionEngine.dailyTotal}
+            onNextDaily={questionEngine.nextDailyQuestion}
+            onMarkSeen={(id) => questionEngine.markAsSeen('daily', id)}
           />
         )}
 

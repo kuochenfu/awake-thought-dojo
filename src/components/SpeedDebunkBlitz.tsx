@@ -25,11 +25,15 @@ import {
 interface SpeedDebunkBlitzProps {
   highScore: number;
   onFinishBlitz: (score: number) => void;
+  getShuffledBlitzPool?: (industry: StrategicIndustry | 'all') => BlitzQuestion[];
+  onQuestionAnswered?: (questionId: string) => void;
 }
 
 export const SpeedDebunkBlitz: React.FC<SpeedDebunkBlitzProps> = ({
   highScore,
-  onFinishBlitz
+  onFinishBlitz,
+  getShuffledBlitzPool,
+  onQuestionAnswered
 }) => {
   const [selectedIndustry, setSelectedIndustry] = useState<StrategicIndustry | 'all'>('all');
   const [isPlaying, setIsPlaying] = useState(false);
@@ -57,8 +61,10 @@ export const SpeedDebunkBlitz: React.FC<SpeedDebunkBlitzProps> = ({
   const currentQ = questions[currentIdx % questions.length];
 
   const startGame = () => {
-    // 隨機洗牌目前選定類別的題目
-    const shuffled = [...filteredPool].sort(() => Math.random() - 0.5);
+    // 透過全域隨機分佈洗牌引擎產生題目順序，保證題庫均勻分佈且不重複
+    const shuffled = getShuffledBlitzPool
+      ? getShuffledBlitzPool(selectedIndustry)
+      : [...filteredPool].sort(() => Math.random() - 0.5);
     setShuffledQuestions(shuffled);
     setIsPlaying(true);
     setIsGameOver(false);
@@ -101,6 +107,10 @@ export const SpeedDebunkBlitz: React.FC<SpeedDebunkBlitzProps> = ({
     } else {
       setCombo(0);
       setFeedback({ isCorrect: false, hint: `答錯！${currentQ.hint}` });
+    }
+
+    if (onQuestionAnswered && currentQ?.id) {
+      onQuestionAnswered(currentQ.id);
     }
 
     setCurrentIdx((i) => i + 1);

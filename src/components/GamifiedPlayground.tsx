@@ -1,15 +1,13 @@
 import React, { useState } from 'react';
 import {
   GameModuleType,
-  UserStats
+  UserStats,
+  H15Challenge,
+  SocraticChallenge,
+  OccamChallenge,
+  BiasScenario
 } from '../types';
-import {
-  H15_CHALLENGES,
-  SOCRATIC_CHALLENGES,
-  OCCAM_CHALLENGES,
-  BIAS_SCENARIOS,
-  BIAS_MECHANISMS
-} from '../data/learningData';
+import { BIAS_MECHANISMS } from '../data/learningData';
 import {
   Scissors,
   HelpCircle,
@@ -22,42 +20,98 @@ import {
   ArrowRight,
   ShieldCheck,
   RefreshCw,
-  Sparkles
+  Sparkles,
+  Shuffle
 } from 'lucide-react';
 
 interface GamifiedPlaygroundProps {
   userStats: UserStats;
   onUpdateStats: (pointsDelta: number, module: GameModuleType) => void;
+  // 全域統一題庫隨機排程器
+  questionEngine?: {
+    currentH15: H15Challenge;
+    h15Cursor: number;
+    h15Total: number;
+    nextH15Question: () => void;
+
+    currentSocratic: SocraticChallenge;
+    socraticCursor: number;
+    socraticTotal: number;
+    nextSocraticQuestion: () => void;
+
+    currentOccam: OccamChallenge;
+    occamCursor: number;
+    occamTotal: number;
+    nextOccamQuestion: () => void;
+
+    currentBias: BiasScenario;
+    biasCursor: number;
+    biasTotal: number;
+    nextBiasQuestion: () => void;
+
+    markAsSeen: (type: 'h15' | 'socratic' | 'occam' | 'bias', id: string) => void;
+  };
 }
 
 export const GamifiedPlayground: React.FC<GamifiedPlaygroundProps> = ({
   userStats,
-  onUpdateStats
+  onUpdateStats,
+  questionEngine
 }) => {
   const [currentModule, setCurrentModule] = useState<GameModuleType>('h15');
 
   // H15 state
-  const [h15Index, setH15Index] = useState(0);
   const [h15UserAnswers, setH15UserAnswers] = useState<Record<string, 'fact' | 'assumption'>>({});
   const [h15Submitted, setH15Submitted] = useState(false);
 
   // Socratic state
-  const [socraticIndex, setSocraticIndex] = useState(0);
   const [selectedOptionId, setSelectedOptionId] = useState<string | null>(null);
 
   // Occam state
-  const [occamIndex, setOccamIndex] = useState(0);
   const [selectedHypothesisId, setSelectedHypothesisId] = useState<string | null>(null);
 
   // Bias state
-  const [biasIndex, setBiasIndex] = useState(0);
   const [selectedMechanismId, setSelectedMechanismId] = useState<string | null>(null);
   const [biasSubmitted, setBiasSubmitted] = useState(false);
 
-  const activeH15 = H15_CHALLENGES[h15Index % H15_CHALLENGES.length];
-  const activeSocratic = SOCRATIC_CHALLENGES[socraticIndex % SOCRATIC_CHALLENGES.length];
-  const activeOccam = OCCAM_CHALLENGES[occamIndex % OCCAM_CHALLENGES.length];
-  const activeBias = BIAS_SCENARIOS[biasIndex % BIAS_SCENARIOS.length];
+  // 取得當前題目（優先使用全域隨機分佈不重複題庫引擎）
+  const activeH15 = questionEngine?.currentH15 || {
+    id: 'h15-1',
+    title: '專案延遲的歸因審查',
+    context: '週會上，PM 正在向主管報告某關鍵模組的開發延誤原因：',
+    statement: '因為後端工程師臨時請假兩天，導致整體驗收進度卡死，所以這次無法如期上線責任全在人力不可抗力。',
+    parts: [
+      { id: 'p1', text: '後端工程師臨時請假兩天', type: 'fact' as const, explanation: '客觀事實。' },
+      { id: 'p2', text: '導致整體驗收進度卡死', type: 'assumption' as const, explanation: '隱含假設。' },
+      { id: 'p3', text: '責任全在人力不可抗力', type: 'assumption' as const, explanation: '卸責腦補。' }
+    ],
+    keyTakeaway: '拆解後發現：客觀事實只有 2 天請假，其餘全為隱含腦補！'
+  };
+
+  const activeSocratic = questionEngine?.currentSocratic || {
+    id: 'soc-1',
+    title: '架構師的「微服務至上論」',
+    statement: '我們公司應該在這次重構把單體應用全面拆成微服務，這樣系統才能擁有最好的擴展性。',
+    hiddenPremise: '預先假設了當前系統的瓶頸在於代碼單體。',
+    options: []
+  };
+
+  const activeOccam = questionEngine?.currentOccam || {
+    id: 'occam-1',
+    title: '深夜 API 突然報錯高峰',
+    phenomenon: '週六凌晨 3 點，海外支付網關 API 連續 20 分鐘回傳 504 Gateway Timeout。',
+    idealConclusion: '奧坎剃刀核心：選擇假設最少的解釋。',
+    hypotheses: []
+  };
+
+  const activeBias = questionEngine?.currentBias || {
+    id: 'bias-1',
+    title: '老主管的「沉沒成本與既有執念」',
+    story: '團隊已經耗費 8 個月自研內部框架...',
+    correctMechanismId: 'asymmetric_gain_loss',
+    explanation: '典型損失規避。',
+    reflectiveQuestion: '如果沒有歷史包袱，我們會怎麼選？'
+  };
 
   // H15 Submit Handler
   const handleH15Submit = () => {
@@ -69,10 +123,15 @@ export const GamifiedPlayground: React.FC<GamifiedPlaygroundProps> = ({
     });
     const pts = correctCount * 25;
     onUpdateStats(pts, 'h15');
+    if (questionEngine) {
+      questionEngine.markAsSeen('h15', activeH15.id);
+    }
   };
 
   const nextH15 = () => {
-    setH15Index((prev) => prev + 1);
+    if (questionEngine) {
+      questionEngine.nextH15Question();
+    }
     setH15UserAnswers({});
     setH15Submitted(false);
   };
@@ -84,10 +143,15 @@ export const GamifiedPlayground: React.FC<GamifiedPlaygroundProps> = ({
     if (chosen) {
       onUpdateStats(chosen.clarityBonus, 'socrates');
     }
+    if (questionEngine) {
+      questionEngine.markAsSeen('socratic', activeSocratic.id);
+    }
   };
 
   const nextSocratic = () => {
-    setSocraticIndex((prev) => prev + 1);
+    if (questionEngine) {
+      questionEngine.nextSocraticQuestion();
+    }
     setSelectedOptionId(null);
   };
 
@@ -100,10 +164,15 @@ export const GamifiedPlayground: React.FC<GamifiedPlaygroundProps> = ({
     } else {
       onUpdateStats(10, 'occam');
     }
+    if (questionEngine) {
+      questionEngine.markAsSeen('occam', activeOccam.id);
+    }
   };
 
   const nextOccam = () => {
-    setOccamIndex((prev) => prev + 1);
+    if (questionEngine) {
+      questionEngine.nextOccamQuestion();
+    }
     setSelectedHypothesisId(null);
   };
 
@@ -117,10 +186,15 @@ export const GamifiedPlayground: React.FC<GamifiedPlaygroundProps> = ({
     } else {
       onUpdateStats(15, 'bias');
     }
+    if (questionEngine) {
+      questionEngine.markAsSeen('bias', activeBias.id);
+    }
   };
 
   const nextBias = () => {
-    setBiasIndex((prev) => prev + 1);
+    if (questionEngine) {
+      questionEngine.nextBiasQuestion();
+    }
     setSelectedMechanismId(null);
     setBiasSubmitted(false);
   };
@@ -228,7 +302,7 @@ export const GamifiedPlayground: React.FC<GamifiedPlaygroundProps> = ({
                 <h2 className="text-lg font-bold text-white flex items-center gap-2">
                   <span>H15 論證拆解刀：零件檢驗</span>
                   <span className="text-xs px-2 py-0.5 rounded bg-slate-800 text-amber-300 border border-amber-500/30 font-normal">
-                    第 {h15Index + 1} 題
+                    第 {questionEngine ? questionEngine.h15Cursor + 1 : 1} / {questionEngine ? questionEngine.h15Total : 6} 題
                   </span>
                 </h2>
                 <p className="text-xs text-slate-400">
@@ -407,7 +481,7 @@ export const GamifiedPlayground: React.FC<GamifiedPlaygroundProps> = ({
                 <h2 className="text-lg font-bold text-white flex items-center gap-2">
                   <span>蘇格拉底提問引擎：隱性轉顯性</span>
                   <span className="text-xs px-2 py-0.5 rounded bg-slate-800 text-blue-300 border border-blue-500/30 font-normal">
-                    第 {socraticIndex + 1} 題
+                    第 {questionEngine ? questionEngine.socraticCursor + 1 : 1} / {questionEngine ? questionEngine.socraticTotal : 6} 題
                   </span>
                 </h2>
                 <p className="text-xs text-slate-400">
@@ -515,7 +589,7 @@ export const GamifiedPlayground: React.FC<GamifiedPlaygroundProps> = ({
                 <h2 className="text-lg font-bold text-white flex items-center gap-2">
                   <span>奧坎剃刀手術台：不加不必要的假設</span>
                   <span className="text-xs px-2 py-0.5 rounded bg-slate-800 text-emerald-300 border border-emerald-500/30 font-normal">
-                    第 {occamIndex + 1} 案
+                    第 {questionEngine ? questionEngine.occamCursor + 1 : 1} / {questionEngine ? questionEngine.occamTotal : 6} 案
                   </span>
                 </h2>
                 <p className="text-xs text-slate-400">
@@ -628,7 +702,7 @@ export const GamifiedPlayground: React.FC<GamifiedPlaygroundProps> = ({
                 <h2 className="text-lg font-bold text-white flex items-center gap-2">
                   <span>認知偏誤偵探社：抓出 6 大底層心理捷徑</span>
                   <span className="text-xs px-2 py-0.5 rounded bg-slate-800 text-purple-300 border border-purple-500/30 font-normal">
-                    第 {biasIndex + 1} 案
+                    第 {questionEngine ? questionEngine.biasCursor + 1 : 1} / {questionEngine ? questionEngine.biasTotal : 6} 案
                   </span>
                 </h2>
                 <p className="text-xs text-slate-400">

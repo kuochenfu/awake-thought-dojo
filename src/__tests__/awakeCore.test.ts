@@ -10,7 +10,8 @@ import {
   calculateBlitzPoints,
   evaluateOccamHypothesis,
   analyzeFallacies,
-  calculateRadarScores
+  calculateRadarScores,
+  shuffleArray
 } from '../utils/engine';
 import { BLITZ_QUESTIONS_POOL } from '../data/featureData';
 import { STRATEGIC_INDUSTRIES, STRATEGIC_INDUSTRY_QUESTIONS } from '../data/strategicIndustryData';
@@ -251,6 +252,29 @@ describe('AWAKE 全方位批判邏輯與邊界安全單元測試 (Comprehensive 
         expect(q.industryName).toBeDefined();
         expect(['fact', 'assumption']).toContain(q.sourceType);
       }
+    });
+  });
+
+  describe('8. 全域題庫隨機分佈與不重複排程驗證 (Unified Shuffle & Zero Repeat Engine)', () => {
+    it('shuffleArray 能保持元素長度與全體元素集合不變', () => {
+      const original = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+      const shuffled = shuffleArray(original);
+      expect(shuffled.length).toBe(original.length);
+      expect([...shuffled].sort((a, b) => a - b)).toEqual(original);
+    });
+
+    it('連續兩次 shuffleArray 能產生隨機排列', () => {
+      const original = Array.from({ length: 30 }, (_, i) => i);
+      const s1 = shuffleArray(original);
+      const s2 = shuffleArray(original);
+      // 長度 30 的陣列兩次完全相同的機率為 1/30!，接近 0
+      expect(s1).not.toEqual(s2);
+    });
+
+    it('所有遊戲題庫總量「有多少就用多少」覆蓋率保證', () => {
+      expect(BLITZ_QUESTIONS_POOL.length).toBe(72);
+      const uniqueBlitzIds = new Set(BLITZ_QUESTIONS_POOL.map((q) => q.id));
+      expect(uniqueBlitzIds.size).toBe(72); // 題目 ID 無重複
     });
   });
 });

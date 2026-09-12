@@ -17,17 +17,27 @@ import {
 interface DailyChallengeViewProps {
   userStats: UserStats;
   onCompleteDaily: (xpReward: number) => void;
+  currentDaily?: DailyChallengeItem;
+  dailyCursor?: number;
+  dailyTotal?: number;
+  onNextDaily?: () => void;
+  onMarkSeen?: (id: string) => void;
 }
 
 export const DailyChallengeView: React.FC<DailyChallengeViewProps> = ({
   userStats,
-  onCompleteDaily
+  onCompleteDaily,
+  currentDaily,
+  dailyCursor = 0,
+  dailyTotal = DAILY_CHALLENGES.length,
+  onNextDaily,
+  onMarkSeen
 }) => {
   const [selectedOptionId, setSelectedOptionId] = useState<string | null>(null);
   const [isSubmitted, setIsSubmitted] = useState(false);
-  const [challengeIdx, setChallengeIdx] = useState(0);
+  const [localIdx, setLocalIdx] = useState(0);
 
-  const challenge = DAILY_CHALLENGES[challengeIdx] || DAILY_CHALLENGES[0];
+  const challenge = currentDaily || DAILY_CHALLENGES[localIdx] || DAILY_CHALLENGES[0];
   const selectedOption = challenge.options.find((o) => o.id === selectedOptionId);
 
   const handleSubmit = () => {
@@ -36,12 +46,19 @@ export const DailyChallengeView: React.FC<DailyChallengeViewProps> = ({
     if (selectedOption?.isOptimal) {
       onCompleteDaily(challenge.bonusXP);
     }
+    if (onMarkSeen) {
+      onMarkSeen(challenge.id);
+    }
   };
 
   const handleNextChallenge = () => {
     setSelectedOptionId(null);
     setIsSubmitted(false);
-    setChallengeIdx((prev) => (prev + 1) % DAILY_CHALLENGES.length);
+    if (onNextDaily) {
+      onNextDaily();
+    } else {
+      setLocalIdx((prev) => (prev + 1) % DAILY_CHALLENGES.length);
+    }
   };
 
   return (
@@ -99,6 +116,9 @@ export const DailyChallengeView: React.FC<DailyChallengeViewProps> = ({
             <span>{challenge.dateStr}</span>
             <span className="text-slate-600">|</span>
             <span className="text-slate-300 font-normal">{challenge.tag}</span>
+            <span className="px-2 py-0.5 rounded bg-slate-800 text-orange-300 border border-orange-500/30 text-[11px] font-bold">
+              第 {dailyCursor + 1} / {dailyTotal} 題 (隨機不重複)
+            </span>
           </div>
           <div className="flex items-center gap-1.5 text-xs text-amber-400 font-bold">
             <Zap className="w-3.5 h-3.5" />

@@ -16,16 +16,29 @@ import {
 
 interface SocraticArenaProps {
   onCompleteDebate: () => void;
+  currentArena?: SocraticDebateTopic;
+  arenaCursor?: number;
+  arenaTotal?: number;
+  onNextArenaTopic?: () => void;
+  onMarkSeen?: (id: string) => void;
 }
 
-export const SocraticArena: React.FC<SocraticArenaProps> = ({ onCompleteDebate }) => {
+export const SocraticArena: React.FC<SocraticArenaProps> = ({
+  onCompleteDebate,
+  currentArena,
+  arenaCursor = 0,
+  arenaTotal = ARENA_TOPICS.length,
+  onNextArenaTopic,
+  onMarkSeen
+}) => {
   const [selectedTopicIdx, setSelectedTopicIdx] = useState(0);
   const [currentRound, setCurrentRound] = useState(0);
   const [userInput, setUserInput] = useState('');
   const [soundnessScore, setSoundnessScore] = useState(30);
   const [isFinished, setIsFinished] = useState(false);
 
-  const topic: SocraticDebateTopic = ARENA_TOPICS[selectedTopicIdx] || ARENA_TOPICS[0];
+  const topic: SocraticDebateTopic =
+    currentArena || ARENA_TOPICS[selectedTopicIdx] || ARENA_TOPICS[0];
 
   const [messages, setMessages] = useState<ArenaMessage[]>([
     {
@@ -41,14 +54,37 @@ export const SocraticArena: React.FC<SocraticArenaProps> = ({ onCompleteDebate }
     }
   ]);
 
-  // 重設當前對話
-  const handleResetTopic = (idx: number) => {
-    setSelectedTopicIdx(idx);
+  // 當 currentArena 變動時同步更新對話
+  React.useEffect(() => {
     setCurrentRound(0);
     setUserInput('');
     setSoundnessScore(30);
     setIsFinished(false);
-    const newTopic = ARENA_TOPICS[idx];
+    setMessages([
+      {
+        id: 'msg-init-user',
+        sender: 'user',
+        text: topic.initialPremise
+      },
+      {
+        id: 'msg-init-socrates',
+        sender: 'socrates',
+        text: topic.socratesOpening,
+        soundnessDelta: 0
+      }
+    ]);
+  }, [topic.id]);
+
+  // 重設當前對話
+  const handleResetTopic = (idx?: number) => {
+    if (idx !== undefined) {
+      setSelectedTopicIdx(idx);
+    }
+    setCurrentRound(0);
+    setUserInput('');
+    setSoundnessScore(30);
+    setIsFinished(false);
+    const newTopic = idx !== undefined ? ARENA_TOPICS[idx] : topic;
     setMessages([
       {
         id: 'msg-init-user',
@@ -99,6 +135,9 @@ export const SocraticArena: React.FC<SocraticArenaProps> = ({ onCompleteDebate }
       if (isNextFinish) {
         setIsFinished(true);
         onCompleteDebate();
+        if (onMarkSeen) {
+          onMarkSeen(topic.id);
+        }
       }
     } else {
       // 自由結尾
@@ -111,6 +150,9 @@ export const SocraticArena: React.FC<SocraticArenaProps> = ({ onCompleteDebate }
       setIsFinished(true);
       setSoundnessScore(100);
       onCompleteDebate();
+      if (onMarkSeen) {
+        onMarkSeen(topic.id);
+      }
     }
   };
 
@@ -178,15 +220,15 @@ export const SocraticArena: React.FC<SocraticArenaProps> = ({ onCompleteDebate }
       <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-2xl space-y-6">
         {/* Topic Selector */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-800">
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <span className="text-xs text-slate-400 font-bold">對辯焦點：</span>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2 items-center">
               {ARENA_TOPICS.map((t, idx) => (
                 <button
                   key={t.id}
                   onClick={() => handleResetTopic(idx)}
                   className={`text-xs px-3 py-1.5 rounded-lg border transition-all ${
-                    selectedTopicIdx === idx
+                    (currentArena ? currentArena.id === t.id : selectedTopicIdx === idx)
                       ? 'bg-red-900/40 border-red-500 text-white font-bold'
                       : 'bg-slate-800 border-slate-700 text-slate-300 hover:text-white'
                   }`}
@@ -194,11 +236,20 @@ export const SocraticArena: React.FC<SocraticArenaProps> = ({ onCompleteDebate }
                   爭論 {idx + 1}
                 </button>
               ))}
+              {onNextArenaTopic && (
+                <button
+                  onClick={onNextArenaTopic}
+                  className="flex items-center gap-1 text-xs px-3 py-1.5 rounded-lg bg-red-950/60 border border-red-500/40 text-red-300 hover:text-white hover:bg-red-900/60 transition-all font-semibold"
+                >
+                  <RotateCcw className="w-3.5 h-3.5" />
+                  <span>隨機下一主題 ({arenaCursor + 1}/{arenaTotal})</span>
+                </button>
+              )}
             </div>
           </div>
 
           <button
-            onClick={() => handleResetTopic(selectedTopicIdx)}
+            onClick={() => handleResetTopic()}
             className="flex items-center gap-1 text-xs text-slate-400 hover:text-white self-start sm:self-auto"
           >
             <RotateCcw className="w-3.5 h-3.5" />

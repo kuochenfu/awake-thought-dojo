@@ -30,6 +30,18 @@ export function calculateBlitzPoints(currentCombo: number): number {
 }
 
 /**
+ * 陣列隨機洗牌演算法（Fisher-Yates 洗牌法，確保均勻分佈且不重複）
+ */
+export function shuffleArray<T>(array: readonly T[]): T[] {
+  const result = [...array];
+  for (let i = result.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [result[i], result[j]] = [result[j], result[i]];
+  }
+  return result;
+}
+
+/**
  * 奧坎剃刀比較演算法
  */
 export function evaluateOccamHypothesis(power: number, assumptionCount: number): number {
